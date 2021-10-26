@@ -1,6 +1,7 @@
 <template>
   <div class="footer">
-    footer
+    PayWay - the better way to pay online &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+    contact: <a href="mailto:whitehotrobot@gmail.com">whitehotrobot@gmail.com</a>
   </div>
 </template>
 
@@ -19,9 +20,13 @@ export default {
 
 <style scoped>
   .footer{
-    border: 1px solid white;
     position: fixed;
     bottom: 0;
+    background: linear-gradient(90deg, #f008, #00f8);
+    height: 25px;
+    color: #fff;
+    padding-top: 5px;
+    text-shadow: 2px 2px 2px #000;
     width: 100%;
     text-align: center;
   }

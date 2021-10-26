@@ -64,10 +64,11 @@ export default {
     float: right;
   }
   .loginContainer{
-    position: fixed;
+    position: absolute;
     left: 200px;
     top: 0;
     width: calc(100% - 270px);
+    min-width: 200px;
     text-align: right;
     padding-right: 60px;
     padding-top: 5px;
