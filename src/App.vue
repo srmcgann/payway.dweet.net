@@ -22,17 +22,19 @@ export default {
     return {
       state:{
         showLoginPrompt: null,
-				userAgent: null,
-        depositAmount: '',
+        userAgent: null,
+        transactionAmount: '',
         withdrawalAmount: '',
         sendAmount: '',
         requestAmount: '',
         userBalance: 0,
+        transactionPartner: '',
         getBalance: null,
         closePrompts: null,
         errorGettingBalance: false,
         setCookie: null,
-        displayDepositDialog: false,
+        displayTransactionDialog: false,
+        displayStatus: false,
         getAvatar: null,
         defaultAvatar: 'https://jsbot.cantelope.org/uploads/1pnBdc.png',
         userAvatar: '',
@@ -158,7 +160,7 @@ export default {
       }else{
         this.state.mode = 'default'
         this.getPages()
-				if(window.location.href !== window.location.origin + '/') window.location.href = window.location.origin
+        if(window.location.href !== window.location.origin + '/') window.location.href = window.location.origin
       }
     },*/
     checkLoggedIn(){
@@ -357,7 +359,7 @@ option{
 }
 select{
   background: #012;
-	color: #ff0;
+  color: #ff0;
 }
 ::-webkit-scrollbar {
   width: 12px!important;
