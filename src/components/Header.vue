@@ -31,17 +31,22 @@ export default {
 <style scoped>
   .header{
     height: 80px;
-    background: linear-gradient(90deg,#f160cd,#408,#204,#102,#0000);
+    background: linear-gradient(50deg,#f188,#f58,#c56,#a36,#338,#228b,#214b,#102b,#102a,#0000);
     overflow: hidden;
     border-bottom: 1px solid #40fa;
+    position: fixed;
+    z-index: 5;
+    width: 100%;
+    top: 0;
+    left: 0;
   }
   .header-logo{
     width: 210px;
     position: relative;
-    height: 100px;
-    background-image: url(https://jsbot.cantelope.org/uploads/1Uexjt.png);
+    height: 80px;
+    background-image: url(https://jsbot.cantelope.org/uploads/GWQ3b.png);
     background-repeat: no-repeat;
-    background-position: -25px -7px;
+    background-position: -15px center;
     background-size: 100% 100%;
   }
   .loggedinusername{

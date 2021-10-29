@@ -26,8 +26,11 @@ export default {
         transactionAmount: '',
         withdrawalAmount: '',
         sendAmount: '',
+        pages: 0,
         requestAmount: '',
         userBalance: 0,
+        userHistory: [],
+        historyPage: 0,
         transactionPartner: '',
         getBalance: null,
         closePrompts: null,
@@ -43,6 +46,7 @@ export default {
         logout: null,
         loggedinUserID: null,
         username: '',
+        transactionsPerPage: 'default',
         password: '',
         regusername: '',
         regpassword: '',
@@ -53,7 +57,7 @@ export default {
         loggedin: false,
         rootDomain: window.location.hostname,
         userName: '',
-        passhash: ''
+        passhash: '',
       }
     }
   },
@@ -82,9 +86,7 @@ export default {
       return ret == '' ? '0' : ret
     },
     confirmClose(){
-      //if(confirm("\n\nThis will close all your channels!\n\nAre you sure??!??!")){
-        this.state.logout()
-      //}
+      this.state.logout()
     },
     showUserSettings(){
       document.getElementsByTagName('HTML')[0].style.overflowY = 'hidden'
@@ -99,70 +101,6 @@ export default {
     toggleLogin(){
       this.state.loggedin = !this.state.loggedin
     },
-    /*
-    getMode(){
-      let vars = window.location.pathname.split('/').filter(v=>v)
-      if(vars.length>0){
-        switch(vars[0]){
-          case 'd':
-            this.state.mode = 'single'
-            this.state.curPage = (+vars[1])-1
-            //this.state.viewDemo = this.alphaToDec(vars[1])
-            this.state.rawDemoID = vars[1]
-            this.$nextTick(()=>this.loadDemo(this.alphaToDec(vars[1])))
-            if(vars[2]){
-              this.state.search.string = decodeURIComponent(vars[2])
-            }
-            break
-          case 'u':
-            if(!vars[1]) window.location.href = window.location.origin
-            this.state.viewAuthor = decodeURIComponent(vars[1]);
-            this.state.user = {name: decodeURIComponent(vars[1])}
-            this.state.mode = 'user'
-            if(vars[2]){
-              this.state.curUserPage = (+vars[2])-1
-              if(vars[3]){
-                this.state.search.string = decodeURIComponent(vars[3])
-                search = '/' + vars[3]
-                history.pushState(null,null,window.location.origin + '/u/' + (this.state.user.name) + '/' + (this.state.curPage + 1)) + search
-                this.beginSearch()
-              }else{
-                if(!this.state.curUserPage || this.state.curUserPage < 0 || this.state.curUserPage > 1e6) this.state.curUserPage = 0
-                history.pushState(null,null,window.location.origin + '/u/' + (vars[1]) + ((this.state.curUserPage) ? '/' + (this.state.curUserPage + 1) : ''))
-                this.getPages()
-              }
-            } else {
-              this.state.curUserPage = 0
-              history.pushState(null,null,window.location.origin + '/u/' + (vars[1]) + ((this.state.curUserPage) ? '/' + (this.state.curUserPage + 1) : ''))
-              this.getPages()
-            }
-          break
-          default:
-            this.state.mode = 'default'
-            let search = ''
-            if(vars[0]){
-              this.state.curPage = (+vars[0])-1
-              if(vars[1]){
-                this.state.search.string = decodeURIComponent(vars[1])
-                search = '/' + vars[1]
-                history.pushState(null,null,window.location.origin + '/' + (this.state.curPage + 1)) + search
-                this.beginSearch()
-              }else{
-                history.pushState(null,null,window.location.origin + '/' + this.state.curPage ? (this.state.curPage + 1) : '')
-                if(!this.state.curPage || this.state.curPage < 0 || this.state.curPage > 1e6) this.state.curPage = 0
-                this.getPages()
-              }
-            }else{
-              window.location.href = window.location.origin
-            }
-          break
-        }
-      }else{
-        this.state.mode = 'default'
-        this.getPages()
-        if(window.location.href !== window.location.origin + '/') window.location.href = window.location.origin
-      }
-    },*/
     checkLoggedIn(){
       let cookies = document.cookie
       let l = (document.cookie).split(';').filter(v=>v.split('=')[0].trim()==='token')
@@ -188,7 +126,8 @@ export default {
           this.state.loggedinUserName = data[1]
           this.state.loggedinUserID = data[2]
           this.state.passhash = data[3]
-          this.state.userAvatar = data[4]
+          this.state.userAvatar = data[4] ? data[4] : this.state.defaultAvatar
+          this.state.transactionsPerPage = +data[5]
           this.setCookie()
           this.state.loginPromptVisible = false
           this.state.getBalance()
@@ -196,7 +135,7 @@ export default {
       })
     },
     getBalance(){
-      let sendData = {userName: this.state.userName, passhash: this.state.passhash}
+      let sendData = {userName: this.state.userName, passhash: this.state.passhash, historyPage: this.state.historyPage}
       console.log(sendData)
       fetch(this.state.baseURL + '/getBalance.php',{
         method: 'POST',
@@ -206,8 +145,14 @@ export default {
         body: JSON.stringify(sendData),
       })
       .then(json=>json.json()).then(data=>{
+        console.log(data)
         if(data[0]){
           this.state.userBalance = data[1]
+          this.state.userHistory = data[2]
+          this.state.pages = data[3]
+          if(this.state.historyPage > this.state.pages - 1){
+            this.state.historyPage = this.state.pages -1
+          }
         }else{
           this.state.errorGettingBalance = true
         }
@@ -229,7 +174,8 @@ export default {
           this.state.loggedinUserName = data[1]
           this.state.loggedinUserID = data[2]
           this.state.passhash = data[3]
-          this.state.userAvatar = data[4]
+          this.state.userAvatar = data[4] ? data[4] : this.state.defaultAvatar
+          this.state.transactionsPerPage = +data[5]
           this.setCookie()
           this.state.loginPromptVisible = false
           this.state.getBalance()
@@ -275,6 +221,7 @@ export default {
     this.state.showLoginPrompt = this.showLoginPrompt
     let l = (document.cookie).split(';').filter(v=>v.split('=')[0].trim()==='token')
     if(l.length) this.checkLoggedIn()
+    setInterval(()=>this.state.getBalance(), 2000)
   }
 }
 </script>
@@ -286,25 +233,25 @@ export default {
 }
 html{
   margin: 0;
-  overflow-X: hidden;
   font-family: Play;
   color: #8fc;
   min-height: 100%;
   min-width: 475px;
   background: #000;
-  scroll-behavior: smooth;
 }
 body{
-  overflow: hidden;
+  scroll-behavior: smooth;
+  overflow-y: scroll;
   margin: 0;
-  overflow-X: hidden;
-  background: linear-gradient(45deg, #001, #011);
+  background: linear-gradient(45deg, #011, #002, #200);
   font-family: Play;
   color: #8fc;
-  min-height: 100vh;
   min-width: 475px;
+  overflow-x: hidden;
+  min-height: 100vh;
 }
 .input{
+  overflow-X: hidden;
   text-align: center;
   font-size: 24px;
   background: #0004;

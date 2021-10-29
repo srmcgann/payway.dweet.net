@@ -8,7 +8,7 @@
     $row = mysqli_fetch_assoc($res);
     $passhash = $row['passhash'];
     if(password_verify($password, $passhash)){
-      echo json_encode([!!mysqli_num_rows($res), $row['name'], $row['id'], $row['passhash'], $row['avatar']]);
+      echo json_encode([!!mysqli_num_rows($res), $row['name'], $row['id'], $row['passhash'], $row['avatar'], $row['transactionsPerPage']]);
     }else{
       echo json_encode([false]);
     }

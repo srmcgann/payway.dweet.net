@@ -13,9 +13,10 @@
     $userID = $row['id'];
     $fmt = numfmt_create( 'en_US', NumberFormatter::CURRENCY );
     $pennies = (numfmt_parse_currency($fmt, $amount, $curr)) * 100;
-    $sql1 = 'INSERT INTO transactions (userID, type, amount) VALUES(' . $userID . ', "' . $transactionType . '", ' . $pennies . ')';
-    mysqli_query($link, $sql1);
     $balance = $row['balance'] + $pennies * ($transactionType == 'withdrawal' || $transactionType == 'send' ? -1 : 1);
+    $sql = 'INSERT INTO transactions (userID, type, amount, balance, relatedTransactionID) VALUES(' . $userID . ', "' . $transactionType . '", ' . $pennies . ', ' . $balance . ', 0)';
+    mysqli_query($link, $sql);
+    $relatedTransactionID = mysqli_insert_id($link);
     $sql = 'UPDATE users SET balance = ' . $balance . ' WHERE id = ' . $userID;
     mysqli_query($link, $sql);
     if($transactionType == 'send' || $transactionType =='request'){
@@ -26,6 +27,10 @@
         $partnerBalance = $row['balance'] + $pennies * ($transactionType == 'send' ? 1 : -1);
         $partnerID = $row['id'];
         $sql = 'UPDATE users SET balance = ' . $partnerBalance . ' WHERE id = ' . $partnerID;
+        mysqli_query($link, $sql);
+        $sql = 'INSERT INTO transactions (userID, type, amount, balance, relatedTransactionID) VALUES(' . $partnerID . ', "' . ($transactionType == 'send' ? 'receive' : 'sent') . '", ' . $pennies . ', ' . $partnerBalance . ', ' . $relatedTransactionID . ')';
+        mysqli_query($link, $sql);
+        $sql = 'UPDATE transactions SET relatedTransactionID = ' . mysqli_insert_id($link) . ' WHERE id = ' . $relatedTransactionID;
         mysqli_query($link, $sql);
       }
     }

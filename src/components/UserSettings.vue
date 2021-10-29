@@ -180,7 +180,7 @@ export default{
   position: absolute;
   width: 100vw;
   height: 100vh;
-  z-index: 10000;
+  z-index: 100;
   top: 0;
   background: #012e;
   text-align: center;

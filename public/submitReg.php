@@ -26,7 +26,7 @@
   $available=str_replace(chr(10),'',file_get_contents('http://' . $baseURL . "/checkUserNameAvailability.php?userName=".urlencode($userName)))==="true";
   if($available && $password){
     $hash = password_hash($password, PASSWORD_DEFAULT);
-    $sql = 'INSERT INTO users (name, passhash, avatar) VALUES("'.$userName.'", "'.$hash.'","");';
+    $sql = 'INSERT INTO users (name, passhash, avatar, balance) VALUES("'.$userName.'", "'.$hash.'", "", 0);';
     mysqli_query($link, $sql);
     $id = mysqli_insert_id($link);
     echo json_encode([true, $hash, mysqli_insert_id($link), $sql]);
