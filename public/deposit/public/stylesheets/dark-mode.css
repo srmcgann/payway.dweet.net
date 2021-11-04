@@ -1,0 +1,22 @@
+@media (prefers-color-scheme: dark) {.Mobile-bar, .Intro, .Header, .Main, .Footer, .Index-page, .image-card-wrapper, .newsletter-form-wrapper, .Index-gallery, .Mobile-overlay, .Mobile-overlay-menu, .Mobile-overlay-close, .Intro-content {
+    background-color:black!important; 
+    color:white;
+    fill:white!important;
+    stroke:white!important;
+}
+    
+h1, h2, h3, p, a, .hr, .ProductItem-nav-breadcrumb-link, .ProductItem-nav, .quantity-label, .Blog-meta, .BlogItem-pagination-link-label, .BlogItem-pagination-link-title, .BlogItem-pagination-link-meta, .BlogItem-pagination-link-icon, .squarespace-social-buttons.inline-style, .Mobile-bar--top, .Header-search, .Header-search-form-input, .newsletter-form-button, .sqs-money-native, .ProductItem-nav-pagination-link-title, .ProductItem-nav-pagination-link-direction, .sqs-cart-quantity, .Mobile-bar-menu {
+    color:white!important;
+    fill:white!important;
+    stroke:white!important;
+    border-color:white!important;
+}
+
+.newsletter-form-button{  
+  box-shadow: inset 0px 0px 0px 1px white!important;
+}
+
+.sqs-add-to-cart-button, .sqs-block-button-element, .sqs-editable-button {
+  border-color:white!important;
+  color:white!important;
+}}

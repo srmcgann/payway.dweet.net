@@ -1,6 +1,18 @@
 <template>
   <div class="main">
     <div class="displayModal" v-if="state.displayStatus" style="z-index: 100;" ref="statusContainer"></div>
+    <div class="displayModal" v-if="state.showDepositModal" style="z-index: 100;" ref="depositModal">
+      <div class="depositIframeContainer dark-mode">
+        You are depositing: {{state.transactionAmount}}<br><br>
+        <div style="margin-bottom: 25px;display: inline-block; background: url(https://jsbot.cantelope.org/uploads/14zkiS.png);width:200px;height:34px;"></div>
+         <form id="payment-form">
+           <div id="card-container"></div>
+           <button id="card-button">complete deposit</button>
+           <button @click="state.showDepositDialog = false">cancel</button>
+         </form>
+         <div id="payment-status-container"></div>
+      </div>
+    </div>
     <div class="displayModal" v-if="state.displayTransactionDialog">
       <div class="container"  style="position: relative; top:50%;transform: translateY(-50%);padding:20px;font-size: .9em;">
         <div v-if="curTransType == 'request' || curTransType == 'send'">
@@ -37,7 +49,7 @@
           v-model="state.transactionAmount"
           :placeholder="'enter ' + curTransType + ' amount'"
           class="numberInput"><br>
-        <button @click="completeTransaction()">do it</button>
+        <button @click="completeTransaction()" :class="{'disabledbg': !state.transactionAmount || !(+this.toCents(this.state.transactionAmount))}">do it</button>
         <button @click="state.displayTransactionDialog = false">cancel</button>
       </div>
     </div>
@@ -168,6 +180,12 @@
 </template>
 
 <script>
+//require('../assets/css/style.css')
+require('../assets/js/square.js')
+require('../assets/css/darkmode.css')
+require('../assets/js/sq-card-pay.js')
+require('../assets/css/sq-payment.css')
+//require('../assets/js/sq-payment-flow.js')
 
 export default {
   name: 'Main',
@@ -260,7 +278,13 @@ export default {
       this.state.transactionAmount = val
       el.value = val
     },
-    completeTransaction(){
+    toCents(str){
+      return this.toFloat(str)*100
+    },
+    toFloat(str){
+      return Number(str.replace(/[^0-9.-]+/g,""));
+    },
+    doTransaction(){
       let sendData = {
         userName: this.state.userName,
         passhash: this.state.passhash,
@@ -292,9 +316,176 @@ export default {
         }
       })
     },
+    completeTransaction(){
+      if(this.curTransType=='deposit'){
+        if(+this.toCents(this.state.transactionAmount)){
+          this.state.showDepositModal = true
+          this.$nextTick(()=>this.deployDeposit())
+        }
+      } else {
+        this.doTransaction()
+      }
+    },
     balanceString(){
       return '<span style="padding-left: 10px; padding-right: 10px; color: ' + (this.state.userBalance < 0 ? '#f88' : '#8fc') + ';background: ' + (this.state.userBalance < 0 ? '#411' : '#142') + '">' + this.formatter.format(this.state.userBalance/100) + '</span>'
+    },
+    deployDeposit(){
+      const darkModeCardStyle = {
+        '.input-container': {
+          borderColor: '#2D2D2D',
+          borderRadius: '6px',
+        },
+        '.input-container.is-focus': {
+          borderColor: '#006AFF',
+        },
+        '.input-container.is-error': {
+          borderColor: '#ff1600',
+        },
+        '.message-text': {
+          color: '#999999',
+        },
+        '.message-icon': {
+          color: '#999999',
+        },
+        '.message-text.is-error': {
+          color: '#ff1600',
+        },
+        '.message-icon.is-error': {
+          color: '#ff1600',
+        },
+        input: {
+          backgroundColor: '#2D2D2D',
+          color: '#FFFFFF',
+          fontFamily: 'helvetica neue, sans-serif',
+        },
+        'input::placeholder': {
+          color: '#999999',
+        },
+        'input.is-error': {
+          color: '#ff1600',
+        },
+        '@media screen and (max-width: 600px)': {
+           'input': {
+              'fontSize': '12px',
+           }
+        }     
+      };
+      window.applicationId = 'sq0idp-9VjbEv-sv-rMbsxTLRB5bQ'
+      window.locationId = 'LHXJHV64CEVDM'
+      window.currency = 'USD'
+      window.country = 'US'
+
+      const appId = 'sq0idp-9VjbEv-sv-rMbsxTLRB5bQ';
+      const locationId = 'LHXJHV64CEVDM';
+      async function initializeCard(payments) {
+         const card = await payments.card({
+          style: darkModeCardStyle,
+         });
+         await card.attach('#card-container'); 
+         return card; 
+       }
+
+       //document.addEventListener('DOMContentLoaded', async function () {
+       async function go() {
+        if (!window.Square) {
+          throw new Error('Square.js failed to load properly');
+        }
+
+        const payments = window.Square.payments(appId, locationId);
+        let card;
+        try {
+          card = await initializeCard(payments);
+        } catch (e) {
+          console.error('Initializing Card failed', e);
+          return;
+        }
+
+        async function handlePaymentMethodSubmission(event, paymentMethod) {
+          event.preventDefault();
+          cardButton.disabled = true;
+          const token = await tokenize(paymentMethod);
+          const paymentResults = await createPayment(token);
+        }
+
+        const cardButton = document.getElementById(
+          'card-button'
+        );
+        cardButton.addEventListener('click', async function (event) {
+          await handlePaymentMethodSubmission(event, card);
+        });
+      }
+
+      let cents = this.toCents(this.state.transactionAmount)
+      let url = this.state.baseURL + '/deposit/process-payment.php'
+      async function createPayment(token) {
+         let statusContainer = document.getElementById(
+           'payment-status-container'
+         );
+         statusContainer.style.visibility = 'hidden';
+         const body = JSON.stringify({
+           locationId,
+           sourceId: token,
+           //token: 'EAAAEAvNMiy0v19NPeEisojLnTiFxdcvZvUSOm2z9MKQGJiIiimIMPQQpsnDo0We',
+           amount: cents
+         });
+         const paymentResponse = await fetch(url, {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+           },
+           body,
+         }).then(text=>text.json()).then(data=>{
+            console.log(data)
+            if(data.payment.card_details.status=='CAPTURED'){
+              displayPaymentResults('SUCCESS');
+            } else {
+              displayPaymentResults('FAILURE');
+            }
+            //console.log('Payment Success', paymentResults);
+         })
+         //const errorBody = await paymentResponse.text();
+         //throw new Error(errorBody);
+       }
+
+       async function tokenize(paymentMethod) {
+         const tokenResult = await paymentMethod.tokenize();
+         if (tokenResult.status === 'OK') {
+           return tokenResult.token;
+         } else {
+           let errorMessage = `Tokenization failed-status: ${tokenResult.status}`;
+           if (tokenResult.errors) {
+             errorMessage += ` and errors: ${JSON.stringify(
+               tokenResult.errors
+             )}`;
+           }
+           throw new Error(errorMessage);
+         }
+       }
+
+       // Helper method for displaying the Payment Status on the screen.
+       // status is either SUCCESS or FAILURE;
+       let self=this
+       function displayPaymentResults(status) {
+         let statusContainer = document.getElementById(
+           'payment-status-container'
+         );
+         statusContainer.style.visibility = 'visible';
+         if (status === 'SUCCESS') {
+           statusContainer.classList.remove('is-failure');
+           statusContainer.classList.add('is-success');
+           setTimeout(()=>{
+             self.state.showDepositModal=false
+             self.doTransaction()
+           },1000)
+         } else {
+           statusContainer.classList.remove('is-success');
+           statusContainer.classList.add('is-failure');
+         }
+       }
+       go()
     }
+  },
+  mounted(){
   }
 }
 </script>
@@ -426,8 +617,11 @@ export default {
   .enabled{
     color: #0f8;
   }
-  disabled{
+  .disabled{
     color: #666;
+  }
+  .disabledbg{
+    background: #666;
   }
   select{
     border: 1px solid #ace4;
@@ -463,5 +657,91 @@ export default {
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
+  }
+  .depositIframeContainer{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+    min-width: 500px;
+    padding: 0px;
+    height: 220px;
+    font-size: 20px;
+    text-align: left;
+    color: #ace;
+    background: #206;
+    border-radius: 3px;
+    box-shadow: 0px 0px 80px 100px #206;
+  }
+  .depositIframe{
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: none;
+  }
+  #payment-status-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    border-radius: 50px;
+    margin: 0 auto;
+    width: 225px;
+    height: 48px;
+    visibility: hidden;
+  }
+
+  #payment-status-container.missing-credentials {
+    width: 350px;
+  }
+
+  #payment-status-container.is-success:before {
+    content: '';
+    background-color: #00b23b;
+    width: 16px;
+    height: 16px;
+    margin-right: 16px;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16ZM11.7071 6.70711C12.0968 6.31744 12.0978 5.68597 11.7093 5.29509C11.3208 4.90422 10.6894 4.90128 10.2973 5.28852L11 6C10.2973 5.28852 10.2973 5.28853 10.2973 5.28856L10.2971 5.28866L10.2967 5.28908L10.2951 5.29071L10.2886 5.29714L10.2632 5.32224L10.166 5.41826L9.81199 5.76861C9.51475 6.06294 9.10795 6.46627 8.66977 6.90213C8.11075 7.4582 7.49643 8.07141 6.99329 8.57908L5.70711 7.29289C5.31658 6.90237 4.68342 6.90237 4.29289 7.29289C3.90237 7.68342 3.90237 8.31658 4.29289 8.70711L6.29289 10.7071C6.68342 11.0976 7.31658 11.0976 7.70711 10.7071L11.7071 6.70711Z' fill='black' fill-opacity='0.9'/%3E%3C/svg%3E");
+    mask: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16ZM11.7071 6.70711C12.0968 6.31744 12.0978 5.68597 11.7093 5.29509C11.3208 4.90422 10.6894 4.90128 10.2973 5.28852L11 6C10.2973 5.28852 10.2973 5.28853 10.2973 5.28856L10.2971 5.28866L10.2967 5.28908L10.2951 5.29071L10.2886 5.29714L10.2632 5.32224L10.166 5.41826L9.81199 5.76861C9.51475 6.06294 9.10795 6.46627 8.66977 6.90213C8.11075 7.4582 7.49643 8.07141 6.99329 8.57908L5.70711 7.29289C5.31658 6.90237 4.68342 6.90237 4.29289 7.29289C3.90237 7.68342 3.90237 8.31658 4.29289 8.70711L6.29289 10.7071C6.68342 11.0976 7.31658 11.0976 7.70711 10.7071L11.7071 6.70711Z' fill='black' fill-opacity='0.9'/%3E%3C/svg%3E");
+  }
+
+  #payment-status-container.is-success:after {
+    content: 'Payment successful';
+    font-size: 14px;
+    line-height: 16px;
+  }
+
+  #payment-status-container.is-failure:before {
+    content: '';
+    background-color: #cc0023;
+    width: 16px;
+    height: 16px;
+    margin-right: 16px;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16ZM5.70711 4.29289C5.31658 3.90237 4.68342 3.90237 4.29289 4.29289C3.90237 4.68342 3.90237 5.31658 4.29289 5.70711L6.58579 8L4.29289 10.2929C3.90237 10.6834 3.90237 11.3166 4.29289 11.7071C4.68342 12.0976 5.31658 12.0976 5.70711 11.7071L8 9.41421L10.2929 11.7071C10.6834 12.0976 11.3166 12.0976 11.7071 11.7071C12.0976 11.3166 12.0976 10.6834 11.7071 10.2929L9.41421 8L11.7071 5.70711C12.0976 5.31658 12.0976 4.68342 11.7071 4.29289C11.3166 3.90237 10.6834 3.90237 10.2929 4.29289L8 6.58579L5.70711 4.29289Z' fill='black' fill-opacity='0.9'/%3E%3C/svg%3E%0A");
+    mask: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16ZM5.70711 4.29289C5.31658 3.90237 4.68342 3.90237 4.29289 4.29289C3.90237 4.68342 3.90237 5.31658 4.29289 5.70711L6.58579 8L4.29289 10.2929C3.90237 10.6834 3.90237 11.3166 4.29289 11.7071C4.68342 12.0976 5.31658 12.0976 5.70711 11.7071L8 9.41421L10.2929 11.7071C10.6834 12.0976 11.3166 12.0976 11.7071 11.7071C12.0976 11.3166 12.0976 10.6834 11.7071 10.2929L9.41421 8L11.7071 5.70711C12.0976 5.31658 12.0976 4.68342 11.7071 4.29289C11.3166 3.90237 10.6834 3.90237 10.2929 4.29289L8 6.58579L5.70711 4.29289Z' fill='black' fill-opacity='0.9'/%3E%3C/svg%3E%0A");
+  }
+
+  #payment-status-container.is-failure:after {
+    content: 'Payment failed';
+    font-size: 14px;
+    line-height: 16px;
+  }
+
+  #payment-status-container.missing-credentials:before {
+    content: '';
+    background-color: #cc0023;
+    width: 16px;
+    height: 16px;
+    margin-right: 16px;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16ZM5.70711 4.29289C5.31658 3.90237 4.68342 3.90237 4.29289 4.29289C3.90237 4.68342 3.90237 5.31658 4.29289 5.70711L6.58579 8L4.29289 10.2929C3.90237 10.6834 3.90237 11.3166 4.29289 11.7071C4.68342 12.0976 5.31658 12.0976 5.70711 11.7071L8 9.41421L10.2929 11.7071C10.6834 12.0976 11.3166 12.0976 11.7071 11.7071C12.0976 11.3166 12.0976 10.6834 11.7071 10.2929L9.41421 8L11.7071 5.70711C12.0976 5.31658 12.0976 4.68342 11.7071 4.29289C11.3166 3.90237 10.6834 3.90237 10.2929 4.29289L8 6.58579L5.70711 4.29289Z' fill='black' fill-opacity='0.9'/%3E%3C/svg%3E%0A");
+    mask: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16ZM5.70711 4.29289C5.31658 3.90237 4.68342 3.90237 4.29289 4.29289C3.90237 4.68342 3.90237 5.31658 4.29289 5.70711L6.58579 8L4.29289 10.2929C3.90237 10.6834 3.90237 11.3166 4.29289 11.7071C4.68342 12.0976 5.31658 12.0976 5.70711 11.7071L8 9.41421L10.2929 11.7071C10.6834 12.0976 11.3166 12.0976 11.7071 11.7071C12.0976 11.3166 12.0976 10.6834 11.7071 10.2929L9.41421 8L11.7071 5.70711C12.0976 5.31658 12.0976 4.68342 11.7071 4.29289C11.3166 3.90237 10.6834 3.90237 10.2929 4.29289L8 6.58579L5.70711 4.29289Z' fill='black' fill-opacity='0.9'/%3E%3C/svg%3E%0A");
+  }
+
+  #payment-status-container.missing-credentials:after {
+    content: 'applicationId and/or locationId is incorrect';
+    font-size: 14px;
+    line-height: 16px;
   }
 </style>

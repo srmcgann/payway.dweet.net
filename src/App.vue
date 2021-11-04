@@ -22,7 +22,7 @@ export default {
     return {
       state:{
         showLoginPrompt: null,
-        userAgent: null,
+				userAgent: null,
         transactionAmount: '',
         withdrawalAmount: '',
         sendAmount: '',
@@ -42,6 +42,7 @@ export default {
         defaultAvatar: 'https://jsbot.cantelope.org/uploads/1pnBdc.png',
         userAvatar: '',
         loginPromptVisible: false,
+        showDepositModal: false,
         login: null,
         logout: null,
         loggedinUserID: null,
@@ -111,7 +112,6 @@ export default {
           this.state.userName = l[0].split('=')[1]
         }
       }
-      console.log(this.state.userName)
       let sendData = {userName: this.state.userName, passhash: this.state.passhash}
       fetch(this.state.baseURL + '/checkEnabled.php',{
         method: 'POST',
@@ -136,7 +136,6 @@ export default {
     },
     getBalance(){
       let sendData = {userName: this.state.userName, passhash: this.state.passhash, historyPage: this.state.historyPage}
-      console.log(sendData)
       fetch(this.state.baseURL + '/getBalance.php',{
         method: 'POST',
         headers: {
@@ -145,7 +144,6 @@ export default {
         body: JSON.stringify(sendData),
       })
       .then(json=>json.json()).then(data=>{
-        console.log(data)
         if(data[0]){
           this.state.userBalance = data[1]
           this.state.userHistory = data[2]
@@ -160,7 +158,6 @@ export default {
     },
     login(){
       let sendData = {userName: this.state.userName, password: this.state.password}
-      console.log(sendData)
       fetch(this.state.baseURL + '/login.php',{
         method: 'POST',
         headers: {
@@ -306,7 +303,7 @@ option{
 }
 select{
   background: #012;
-  color: #ff0;
+	color: #ff0;
 }
 ::-webkit-scrollbar {
   width: 12px!important;
