@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 06, 2021 at 08:42 PM
+-- Generation Time: Nov 08, 2021 at 01:38 PM
 -- Server version: 8.0.27-0ubuntu0.21.04.1
 -- PHP Version: 7.3.31-2+ubuntu21.04.1+deb.sury.org+1
 
@@ -51,7 +51,8 @@ CREATE TABLE `users` (
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
   `avatar` varchar(2048) NOT NULL,
   `balance` bigint NOT NULL,
-  `transactionsPerPage` int NOT NULL DEFAULT '6'
+  `transactionsPerPage` int NOT NULL DEFAULT '6',
+  `isAdmin` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
