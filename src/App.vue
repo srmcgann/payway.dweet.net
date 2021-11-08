@@ -22,11 +22,13 @@ export default {
     return {
       state:{
         showLoginPrompt: null,
-				userAgent: null,
+        userAgent: null,
         transactionAmount: '',
         withdrawalAmount: '',
         sendAmount: '',
         pages: 0,
+        globalTotal: 0,
+        isAdmin: false,
         requestAmount: '',
         userBalance: 0,
         userHistory: [],
@@ -128,6 +130,7 @@ export default {
           this.state.passhash = data[3]
           this.state.userAvatar = data[4] ? data[4] : this.state.defaultAvatar
           this.state.transactionsPerPage = +data[5]
+          this.state.isAdmin = !!data[6]
           this.setCookie()
           this.state.loginPromptVisible = false
           this.state.getBalance()
@@ -148,6 +151,7 @@ export default {
           this.state.userBalance = data[1]
           this.state.userHistory = data[2]
           this.state.pages = data[3]
+          this.state.globalTotal = data[4]
           if(this.state.historyPage > this.state.pages - 1){
             this.state.historyPage = this.state.pages -1
           }
@@ -173,6 +177,7 @@ export default {
           this.state.passhash = data[3]
           this.state.userAvatar = data[4] ? data[4] : this.state.defaultAvatar
           this.state.transactionsPerPage = +data[5]
+      this.state.isAdmin = !!data[6]
           this.setCookie()
           this.state.loginPromptVisible = false
           this.state.getBalance()
@@ -303,7 +308,7 @@ option{
 }
 select{
   background: #012;
-	color: #ff0;
+  color: #ff0;
 }
 ::-webkit-scrollbar {
   width: 12px!important;

@@ -7,7 +7,7 @@
   $res = mysqli_query($link, $sql);
   if(mysqli_num_rows($res)){
     $row = mysqli_fetch_assoc($res);
-    echo json_encode([!!mysqli_num_rows($res), $row['name'], $row['id'], $row['passhash'], $row['avatar'], $row['transactionsPerPage']]);
+    echo json_encode([!!mysqli_num_rows($res), $row['name'], $row['id'], $row['passhash'], $row['avatar'], $row['transactionsPerPage'], $row['isAdmin']]);
   } else {
     echo json_encode([false,'']);
   }

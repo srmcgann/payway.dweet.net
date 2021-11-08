@@ -5,6 +5,7 @@ const VueLoaderPlugin = require('vue-loader/lib/plugin');
 module.exports = {
   devServer: {
     host: 'payway.dweet.net',
+    https:  true,
 	  port:8000,
     publicPath: '/',
   },

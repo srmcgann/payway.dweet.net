@@ -55,6 +55,13 @@
     </div>
     <div class="container">
       Money Actions<br>
+      <span
+        v-if="state.isAdmin"
+        class="adminNotes"
+        :class="{'adminNotesOK':state.globalTotal >=0, 'adminNotesProblem': state.globalTotal <0}"
+      >
+        GLOBAL BALANCE {{formatter.format(state.globalTotal/100)}}
+      </span>
       <div class="container">
         <span class="containerIcon credit">+</span>
         <button class="actionButton" style="margin-left: 50px;" @click="deposit()">
@@ -205,7 +212,7 @@ export default {
       switch(type){
         case 'send': return 'sent funds'; break
         case 'receive': return 'received funds'; break
-        case 'request': return 'request fulfilled'; break
+        case 'sent': return 'request fulfilled'; break
         case 'deposit': return 'deposited funds'; break
         case 'withdrawal': return 'funds withdrawal'; break
       }
@@ -743,5 +750,17 @@ export default {
     content: 'applicationId and/or locationId is incorrect';
     font-size: 14px;
     line-height: 16px;
+  }
+  .adminNotesOK{
+    color: #4ff;
+    background: #044;
+  }
+  .adminNotesProblem{
+    color: #f44;
+    background: #400;
+  }
+  .adminNotes{
+    padding: 5px;
+    display: inline-block;
   }
 </style>
