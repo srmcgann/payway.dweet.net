@@ -1,2 +1,2 @@
 #!/bin/bash
-php /home/cantelope/payway_admin/syncassets.php
+php /var/www/html/payway.dweet.net/payway_admin/syncassets.php

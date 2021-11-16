@@ -2,7 +2,7 @@
   <Header :state="state"/>
   <UserSettings v-if="state.userSettingsVisible" :state="state"/>
   <LoginForm v-if="state.loginPromptVisible" :state="state"/>
-  <Main v-if="state.loggedin" :state="state"/>
+  <Main :state="state"/>
   <Footer :state="state"/>
 </template>
 
@@ -21,13 +21,7 @@ export default {
   data(){
     return {
       state:{
-        featuredCurrencies:[
-          'BTC',
-          'ETH',
-          'XRP',
-          'HNS',
-          'MATIC'
-        ],
+        featuredCurrencies:[],
         history: [],
         showLoginPrompt: null,
         userAgent: null,
@@ -139,7 +133,7 @@ export default {
           this.state.passhash = data[3]
           this.state.userAvatar = data[4] ? data[4] : this.state.defaultAvatar
           this.state.transactionsPerPage = +data[5]
-          this.state.isAdmin = !!data[6]
+          this.state.isAdmin = !!(+data[6])
           this.setCookie()
           this.state.loginPromptVisible = false
           this.state.getBalance()
@@ -162,7 +156,12 @@ export default {
           this.state.pages = data[3]
           this.state.globalTotal = data[4]
           this.state.globalAssets = data[5]
+          this.state.globalAssets.map(v=>{
+            v.featured = !!(+v.featured)
+          })
+          this.state.globalAssets.sort((a,b)=>b.featured - a.featured)
           this.state.history = data[6]
+          this.state.featuredCurrencies = data[7]
           if(this.state.historyPage > this.state.pages - 1){
             this.state.historyPage = this.state.pages -1
           }
@@ -182,16 +181,17 @@ export default {
       })
       .then(json=>json.json()).then(data=>{
         if(data[0]){
-          this.state.loggedin = true
+          //this.state.loggedin = true
           this.state.loggedinUserName = data[1]
           this.state.loggedinUserID = data[2]
           this.state.passhash = data[3]
           this.state.userAvatar = data[4] ? data[4] : this.state.defaultAvatar
           this.state.transactionsPerPage = +data[5]
       this.state.isAdmin = !!data[6]
-          this.setCookie()
-          this.state.loginPromptVisible = false
           this.state.getBalance()
+          this.state.loginPromptVisible = false
+          this.setCookie()
+          setTimeout(()=>window.location.reload(),100)
         }else{
           this.state.invalidLoginAttempt = true
         }
@@ -234,7 +234,8 @@ export default {
     this.state.showLoginPrompt = this.showLoginPrompt
     let l = (document.cookie).split(';').filter(v=>v.split('=')[0].trim()==='token')
     if(l.length) this.checkLoggedIn()
-    setInterval(()=>this.state.getBalance(), 2000)
+    setInterval(()=>this.state.getBalance(), 10000)
+    this.state.getBalance()
   }
 }
 </script>
@@ -261,7 +262,7 @@ body{
   color: #8fc;
   min-width: 475px;
   overflow-x: hidden;
-  min-height: 100vh;
+  min-height: calc(100vh - 80px);
 }
 .input{
   overflow-X: hidden;
@@ -282,6 +283,7 @@ input[type=text]{
   color: #ffa;
 }
 input[type=checkbox]{
+  cursor: pointer;
   transform: scale(1.5);
   margin: 8px;
   margin-left: 5px;
@@ -361,9 +363,8 @@ a{
 .checkboxLabel {
   display: inline-block;
   position: relative;
-  padding-left: 35px;
+  padding-left: 18px;
   margin-bottom: -2px;
-  margin-left: 30px;
   margin-top: 3px;
   cursor: pointer;
   font-size: 22px;
@@ -389,7 +390,7 @@ a{
   left: 0;
   height: 25px;
   width: 25px;
-  border: 1px solid #2468;
+  border: 1px solid #4688;
   background-color: #123;
 }
 
@@ -417,8 +418,8 @@ a{
 
 /* Style the checkmark/indicator */
 .checkboxLabel .checkmark:after {
-  left: 9px;
-  top: 5px;
+  left: 4px;
+  top: 0;
   width: 5px;
   height: 10px;
   border: solid white;
@@ -432,8 +433,11 @@ video:focus{
 }
 .loginButton{
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%);
+  top: 12px;
+  right: 15px;
+  z-index: 2000;
+  color: #8fc;
+  text-shadow: 2px 2px 2px #000;
+  background: #199f;
 }
 </style>

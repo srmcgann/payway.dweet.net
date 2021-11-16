@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 08, 2021 at 01:38 PM
+-- Generation Time: Nov 16, 2021 at 02:53 PM
 -- Server version: 8.0.27-0ubuntu0.21.04.1
 -- PHP Version: 7.3.31-2+ubuntu21.04.1+deb.sury.org+1
 
@@ -25,6 +25,44 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `currencies`
+--
+
+CREATE TABLE `currencies` (
+  `currency` varchar(128) NOT NULL,
+  `id` int NOT NULL,
+  `price_usd` varchar(128) NOT NULL DEFAULT '',
+  `name` varchar(128) NOT NULL DEFAULT '',
+  `last_sync` datetime NOT NULL,
+  `featured` tinyint(1) NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `featuredCurrencies`
+--
+
+CREATE TABLE `featuredCurrencies` (
+  `id` int NOT NULL,
+  `currency` varchar(128) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `history`
+--
+
+CREATE TABLE `history` (
+  `currencyData` text NOT NULL,
+  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id` int NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `transactions`
 --
 
@@ -35,7 +73,8 @@ CREATE TABLE `transactions` (
   `amount` bigint NOT NULL,
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `relatedTransactionID` int NOT NULL,
-  `balance` bigint NOT NULL
+  `balance` bigint NOT NULL,
+  `currency` varchar(128) NOT NULL DEFAULT 'USD'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
@@ -60,6 +99,25 @@ CREATE TABLE `users` (
 --
 
 --
+-- Indexes for table `currencies`
+--
+ALTER TABLE `currencies`
+  ADD UNIQUE KEY `id` (`id`);
+
+--
+-- Indexes for table `featuredCurrencies`
+--
+ALTER TABLE `featuredCurrencies`
+  ADD UNIQUE KEY `id` (`id`);
+
+--
+-- Indexes for table `history`
+--
+ALTER TABLE `history`
+  ADD UNIQUE KEY `id_2` (`id`),
+  ADD KEY `id` (`id`);
+
+--
 -- Indexes for table `transactions`
 --
 ALTER TABLE `transactions`
@@ -74,6 +132,24 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `currencies`
+--
+ALTER TABLE `currencies`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `featuredCurrencies`
+--
+ALTER TABLE `featuredCurrencies`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `history`
+--
+ALTER TABLE `history`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `transactions`

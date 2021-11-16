@@ -5,18 +5,17 @@
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
   curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET' );
   curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-    "X-CoinAPI-Key: 7C024898-0DA8-4B9C-8044-8C9EDB9AC22B",
+    "X-CoinAPI-Key: 0B42D2C9-E97F-413D-AEE0-4015120C3ABA",
   ));
   $json = json_decode(curl_exec($ch));
   if(sizeof($json)){
+    $sql = 'SELECT currency FROM currencies WHERE featured = 1';
+    $res = mysqli_query($link, $sql);
+    $featuredCurrencies = [];
+    for($i = 0; $i < mysqli_num_rows($res); ++$i){
+      $featuredCurrencies[] = mysqli_fetch_assoc($res)['currency'];
+    }
     $assets = [];
-    $featuredCurrencies = [
-      'BTC',
-      'ETH',
-      'XRP',
-      'HNS',
-      'MATIC'
-    ];
     $history = [];
     foreach($json as $el => $val){
       if(isset($val->{'price_usd'}) && in_array($val->{'asset_id'}, $featuredCurrencies)){
@@ -24,7 +23,7 @@
         $sql = 'SELECT id FROM currencies WHERE currency = "' . $val->{'asset_id'} . '"';
         $res = mysqli_query($link, $sql);
         if(!mysqli_num_rows($res)){
-          $sql = 'INSERT INTO currencies (name, last_sync, currency) VALUES("' . $val->{'name'} . '", now(), "' . $val->{'asset_id'} . '")';
+          $sql = 'INSERT INTO currencies (name, last_sync, currency, price_usd) VALUES("' . $val->{'name'} . '", now(), "' . $val->{'asset_id'} . '", "' . $val->{'price_usd'} . '")';
           mysqli_query($link, $sql);
         }
         $sql = 'UPDATE currencies SET name = "' . $val->{'name'} . '", last_sync = now(), price_usd = "' . $val->{'price_usd'} . '" WHERE currency = "' . $val->{'asset_id'} . '"';

@@ -62,7 +62,13 @@
     for($i = 0; $i < mysqli_num_rows($res); ++$i){
       $history[] = json_decode(mysqli_fetch_assoc($res)['currencyData']);
     }
-    echo json_encode([true, $balance, $userHistory, $pages, $globalTotal, $globalAssets, $history]);
+    $sql = 'SELECT currency FROM currencies WHERE featured = 1';
+    $res = mysqli_query($link, $sql);
+    $featuredCurrencies = [];
+    for($i = 0; $i < mysqli_num_rows($res); ++$i){
+      $featuredCurrencies[] = mysqli_fetch_assoc($res)['currency'];
+    }
+    echo json_encode([true, $balance, $userHistory, $pages, $globalTotal, $globalAssets, $history, $featuredCurrencies]);
   } else {
     echo json_encode([false]);
   }

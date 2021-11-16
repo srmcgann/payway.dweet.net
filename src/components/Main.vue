@@ -1,7 +1,7 @@
 <template>
   <div class="main">
-    <div class="displayModal" v-if="state.displayStatus" style="z-index: 100;" ref="statusContainer"></div>
-    <div class="displayModal" v-if="state.showDepositModal" style="z-index: 100;" ref="depositModal">
+    <div class="displayModal" v-if="state.loggedin && state.displayStatus" style="z-index: 100;" ref="statusContainer"></div>
+    <div class="displayModal" v-if="state.loggedin && state.showDepositModal" style="z-index: 100;" ref="depositModal">
       <div class="depositIframeContainer dark-mode">
         You are depositing: {{state.transactionAmount}}<br><br>
         <div style="margin-bottom: 25px;display: inline-block; background: url(https://jsbot.cantelope.org/uploads/14zkiS.png);width:200px;height:34px;"></div>
@@ -13,7 +13,7 @@
          <div id="payment-status-container"></div>
       </div>
     </div>
-    <div class="displayModal" v-if="state.displayTransactionDialog">
+    <div class="displayModal" v-if="state.loggedin && state.displayTransactionDialog">
       <div class="container"  style="position: relative; top:50%;transform: translateY(-50%);padding:20px;font-size: .9em;">
         <div v-if="curTransType == 'request' || curTransType == 'send'">
           <span v-if="curTransType == 'request'">From whom would you like <br>to receive the funds?<br></span>
@@ -53,7 +53,7 @@
         <button @click="state.displayTransactionDialog = false">cancel</button>
       </div>
     </div>
-    <div class="container">
+    <div class="container" v-if="state.loggedin">
       Money Actions
       <div class="container">
         <span class="containerIcon credit">+</span>
@@ -75,11 +75,11 @@
       </div>
       <div style="clear: both;"></div>
     </div>
-    <div class="container">
+    <div class="container" v-if="state.loggedin">
       <span class="containerTitle">Current Balance &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
       <div class="balance" v-html="balanceString()"></div>
     </div>
-    <div class="container" style="padding-top: 0;" v-if="state.userHistory">
+    <div class="container" style="padding-top: 0;" v-if="state.loggedin && state.userHistory">
       Activity
       <div class="pagination">
         <button
@@ -177,6 +177,33 @@
       </div>
     </div>
     <div
+      class="container"
+      style="font-size: 24px;"
+    >
+      <div v-if="state.loggedin">
+        coins
+      </div>
+        <div style="display: inline-block;margin-left:10px;font-size:.4em;color: #6ae;">(24 hr graphs)</div>
+      <div class="container" style="border: none;font-size: initial;">
+        <div class="currencyCardsContainer">
+          <div
+            class="currencyCard"
+            v-for="asset in filteredAssets"
+            :key="asset.id"
+          >
+            <div v-html="cardMarkup(asset)"></div>
+          </div><br>
+          <button
+            class="showMoreAssetsButton"
+            v-if="0&&shownAssets<state.globalAssets.length-1"
+            @click="shownAssets+=loadMoreAssetsVal"
+          >
+            load more...
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
       v-if="state.isAdmin"
       class="container"
     >
@@ -192,22 +219,29 @@
           <div>
             GLOBAL BALANCE {{formatter.format(state.globalTotal/100)}}
           </div>
-        </div><br>
-        <div class="currencyCardsContainer">
-          <div
-            class="currencyCard"
-            v-for="asset in filteredAssets"
-            key="asset.currency"
-          >
-            <div v-html="cardMarkup(asset)"></div>
-          </div><br>
-          <button
-            class="showMoreAssetsButton"
-            v-if="0&&shownAssets<state.globalAssets.length-1"
-            @click="shownAssets+=loadMoreAssetsVal"
-          >
-            load more...
-          </button>
+        </div>
+        <button @click="showCurrencies = !showCurrencies"
+          class="tinyButtons"
+          style="border-radius: 4px;margin-top: 6px;position: absolute;line-height: 14px;padding: 1px;padding-right:3px;padding-left:3px;width: 80px;background: #5fc;margin-left: 20px;color: #000;font-size: 15px;"
+          v-html="(showCurrencies ? 'hide' : 'manage') + ' currencies'"
+        ></button>
+        <div v-if="showCurrencies">
+          <br>
+          featured currencies ({{state.featuredCurrencies.length + ' out of ' + state.globalAssets.length}})<br>
+          <div class="assetContainer">
+            <div class="assetItem" v-for="asset in state.globalAssets" :key="asset.id">
+              <div
+                class="assetSubItem"
+                :class="{'featured': asset.featured,'notFeatured': !asset.featured}"
+              >
+                <label style="height: 20px;font-size: 1em;cursor: pointer;" :for="asset.currency" class="checkboxLabel">
+                  <input type="checkbox" :id="asset.currency" v-model="asset.featured" @input="update(asset.currency, asset.featured)">
+                  <span class="checkmark" style="width:15px; height:15px;font-size: 15px;top:-1px;left:-3px;padding-left:0;"></span>
+                  <span style="font-size: .95em;margin-top:-2px;text-align: left">{{asset.currency}}</span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -215,12 +249,29 @@
 </template>
 
 <script>
-//require('../assets/css/style.css')
 require('../assets/js/square.js')
 require('../assets/css/darkmode.css')
 require('../assets/js/sq-card-pay.js')
 require('../assets/css/sq-payment.css')
-//require('../assets/js/sq-payment-flow.js')
+
+window.update = (userName, passhash, currency, featured, baseURL, id) => {
+  let sendData = {
+    userName,
+    passhash,
+    currency,
+    featured: featured ? 0 : 1
+  }
+  fetch(baseURL + '/updateAsset.php',{
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(sendData),
+  })
+  .then(json=>json.json()).then(data=>{
+    window.state.globalAssets = window.state.globalAssets.filter(v=>v.id != id)
+  })
+}
 
 export default {
   name: 'Main',
@@ -228,6 +279,7 @@ export default {
   },
   data(){
     return{
+      showCurrencies: false,
       graphs: [],
       shownAssets: 20,
       loadMoreAssetsVal: 20,
@@ -252,19 +304,35 @@ export default {
     }
   },
   methods:{
+    update(currency, featured){
+      let sendData = {
+        userName: this.state.userName,
+        passhash: this.state.passhash,
+        currency,
+        featured: featured ? 0 : 1
+      }
+      console.log(sendData)
+      fetch(this.state.baseURL + '/updateAsset.php',{
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sendData),
+      })
+      .then(json=>json.json()).then(data=>{
+        this.state.getBalance()
+      })
+    },
     cardMarkup(asset){
+      if(typeof asset == 'undefined') return
       this.$nextTick(()=>{
         let el
-        if(typeof this.graphs[asset.currency] == 'undefined'){
-          el = this.graphs[asset.currency] = {}
-          el.c = document.querySelectorAll('#graph' + asset.id)[0]
-          el.c.width = el.c.clientWidth
-          el.c.height = el.c.clientHeight
-          el.x = el.c.getContext('2d')
-          el.t = 0
-        } else {
-          el = this.graphs[asset.currency]
-        }
+        el = this.graphs[asset.currency] = {}
+        el.c = document.querySelectorAll('#graph' + asset.id)[0]
+        el.c.width = el.c.clientWidth
+        el.c.height = el.c.clientHeight
+        el.x = el.c.getContext('2d')
+        el.t = 0
         let x = el.x
         let t = el.t
         let c = el.c
@@ -281,6 +349,7 @@ export default {
           let min = 5e8
           let avg = 0
           hist.push(...this.state.history.map(v=>v.filter(q=>q.currency == asset.currency)[0]))
+          hist = hist.filter(v=>v)
           hist.map(v=>{
             avg += v.price_usd / hist.length
             if(v.price_usd > max) max = v.price_usd
@@ -323,15 +392,15 @@ export default {
          }
       })
       return '<span style="display: inline-block;padding-top:4px;color: #ff5;font-size: 1.8em;">' + this.trimmed(asset.currency, 10) +'</span> <span style="font-size: 1em">(' + this.trimmed(asset.name, 20) + ')</span>'+
-      '<br><button class="tinyButtons" title="buy ' + asset.name + '">buy</button>' +
-      '<button class="tinyButtons" title="sell ' + asset.name + '">sell</button>' +
+      (this.state.loggedin ? '<br><button class="tinyButtons" title="buy ' + asset.name + '">buy</button>' +
+      '<button class="tinyButtons" title="sell ' + asset.name + '">sell</button>' : '')  +
+      (this.state.isAdmin ? '<button class="tinyButtons" style="width: 100px;background: #833" title="unfeature ' + asset.name + '" onclick="window.update(\''+this.state.userName+'\',\''+this.state.passhash+'\',\''+asset.currency+'\','+asset.featured+',\''+this.state.baseURL+'\','+asset.id+')">unfeature</button>' : '') +
       '<div class="assetDetailsContainer">'+
-      'value in USD<br>' +
-      '<div class="USDPrice">' +
+      '<div style="position:absolute;">value in USD</div>' +
+      '<div class="USDPrice"><div style="display:inline-block;">' +
       this.formatter.format(Math.round(asset.price_usd*100)/100) +
-      '</div>'+
-      '<div style="float: right;color: #6ae;">(24 hr graph)</div>'+
-      '<canvas id="graph' + asset.id + '" class="graph"></canvas>'
+      '</div></div>'+
+      '<canvas id="graph' + asset.id + '" class="graph"></canvas>' +
       '</div>'
     },
     trimmed(str, num){
@@ -571,7 +640,6 @@ export default {
            },
            body,
          }).then(text=>text.json()).then(data=>{
-            console.log(data)
             if(data.payment.card_details.status=='CAPTURED'){
               displayPaymentResults('SUCCESS');
             } else {
@@ -630,6 +698,7 @@ export default {
     }
   },
   mounted(){
+    window.state = this.state
     window.onresize=this.rsz
   }
 }
@@ -637,13 +706,14 @@ export default {
 
 <style scoped>
   .main{
-    margin-bottom: 40px;
+    margin-bottom: 30px;
     margin-top:90px;
     height: 100%;
+    padding-bottom: 1px;
   }
   .container{
-    background: #1028;
-    border: 1px solid #4682;
+    background: #1236;
+    border: 1px solid #4681;
     padding: 6px;
     padding-top: 3px;
     padding-bottom: 5px;
@@ -937,6 +1007,29 @@ export default {
     font-weight: 400;
     font-size: 18px;
   }
+  .featured{
+    background:#2faa;
+    font-weight: 900;
+    color: #000;
+  }
+  .notFeatured{
+    background:#0006;
+  }
+  .assetContainer{
+    display:flex;
+    flex-wrap:wrap;
+    flex-direction:row;
+    justify-content: space-evenly;
+  }
+  .assetItem{
+    flex-grow: 3;
+  }
+  .assetSubItem{
+    margin:2px;
+    padding-left: 5px;
+    padding-right:5px;
+    font-size:.8em;
+  }
 </style>
 <style>
   .graph{
@@ -948,6 +1041,7 @@ export default {
   .assetDetailsContainer{
     width:calc(100% - 6px);
     background: #0000;
+    text-align: center;
     color: #aaa;
     padding: 2px;
     margin: 0;
@@ -955,8 +1049,19 @@ export default {
     margin-bottom: 5px;
   }
   .USDPrice{
-    font-size: 1.5em;
-    color: #ff6c;
+    font-size: 1.75em;
+    color: #ffce;
+    background: #0f83;
+    line-height: 0;
+    height: 0;
+    vertical-align: bottom;
+    padding-top:0;
+    padding-bottom:0;
+    margin-top: 10px;
+    margin-left: 60px;
+    box-shadow: 0 0 20px 10px #0ff8;
+    text-shadow: 1px 1px 2px #000;
+    border-radius: 10px;
     display: inline-block;
   }
   .tinyButtons{
