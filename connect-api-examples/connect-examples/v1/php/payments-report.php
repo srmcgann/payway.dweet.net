@@ -55,10 +55,10 @@ function getPayments($location_ids) {
   # Restrict the request to the last calendar year, eight hours behind UTC
   # Make sure to URL-encode all parameters
   $parameters = http_build_query(
-  	array(
-  	  'begin_time' => date("m-d-y",strtotime("last year January 1st")),
-  	  'end_time'   => date("m-d-y",strtotime("this year January 1st"))
-  	)
+    array(
+      'begin_time' => date("m-d-y",strtotime("last year January 1st")),
+      'end_time'   => date("m-d-y",strtotime("this year January 1st"))
+    )
   );
 
   $payments = array();
@@ -111,11 +111,11 @@ function getPayments($location_ids) {
   $seenPaymentIds = array();
   $uniquePayments = array();
   foreach ($payments as $payment) {
-  	if (array_key_exists($payment->id, $seenPaymentIds)) {
-  	  continue;
-  	}
-  	$seenPaymentIds[$payment->id] = true;
-  	array_push($uniquePayments, $payment);
+    if (array_key_exists($payment->id, $seenPaymentIds)) {
+      continue;
+    }
+    $seenPaymentIds[$payment->id] = true;
+    array_push($uniquePayments, $payment);
   }
 
   return $uniquePayments;

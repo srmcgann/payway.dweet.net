@@ -22,7 +22,7 @@ export default {
   .footer{
     position: fixed;
     bottom: 0;
-    background: linear-gradient(90deg, #201, #204);
+    background: linear-gradient(90deg, #401a, #104a);
     height: 25px;
     color: #fff;
     padding-top: 5px;

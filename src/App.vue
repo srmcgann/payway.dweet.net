@@ -21,6 +21,14 @@ export default {
   data(){
     return {
       state:{
+        featuredCurrencies:[
+          'BTC',
+          'ETH',
+          'XRP',
+          'HNS',
+          'MATIC'
+        ],
+        history: [],
         showLoginPrompt: null,
         userAgent: null,
         transactionAmount: '',
@@ -28,6 +36,7 @@ export default {
         sendAmount: '',
         pages: 0,
         globalTotal: 0,
+        globalAssets: [],
         isAdmin: false,
         requestAmount: '',
         userBalance: 0,
@@ -152,6 +161,8 @@ export default {
           this.state.userHistory = data[2]
           this.state.pages = data[3]
           this.state.globalTotal = data[4]
+          this.state.globalAssets = data[5]
+          this.state.history = data[6]
           if(this.state.historyPage > this.state.pages - 1){
             this.state.historyPage = this.state.pages -1
           }

@@ -15,6 +15,7 @@
     $start = $historyPage * $itemsPerPage;
     $sql = 'SELECT * FROM transactions WHERE userID = ' . $userID . ' ORDER BY DATE DESC LIMIT ' . $start . ', ' . $itemsPerPage;
     $res = mysqli_query($link, $sql);
+    $userHistory = [];
     for($i = 0; $i < mysqli_num_rows($res); ++$i){
       $row = mysqli_fetch_assoc($res);
       $d = new DateTime($row['date']);
@@ -32,7 +33,7 @@
         $row2['userAvatar'] = $row3['avatar'];
         $row['related'] = $row2;
       }
-      $history[] = $row;
+      $userHistory[] = $row;
     }
     $sql = 'SELECT * FROM transactions WHERE userID = ' . $userID;
     $res = mysqli_query($link, $sql);
@@ -48,7 +49,20 @@
       }
       $globalTotal = $total;
     }
-    echo json_encode([true, $balance, $history, $pages, $globalTotal]);
+    $sql = 'SELECT * FROM currencies';
+    $res = mysqli_query($link, $sql);
+    $globalAssets = [];
+    for($i = 0; $i < mysqli_num_rows($res); ++$i){
+      $row = mysqli_fetch_assoc($res);
+      $globalAssets[] = $row;
+    }
+    $history = [];
+    $sql = 'SELECT * FROM history';
+    $res = mysqli_query($link, $sql);
+    for($i = 0; $i < mysqli_num_rows($res); ++$i){
+      $history[] = json_decode(mysqli_fetch_assoc($res)['currencyData']);
+    }
+    echo json_encode([true, $balance, $userHistory, $pages, $globalTotal, $globalAssets, $history]);
   } else {
     echo json_encode([false]);
   }

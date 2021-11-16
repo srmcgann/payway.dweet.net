@@ -54,14 +54,7 @@
       </div>
     </div>
     <div class="container">
-      Money Actions<br>
-      <span
-        v-if="state.isAdmin"
-        class="adminNotes"
-        :class="{'adminNotesOK':state.globalTotal >=0, 'adminNotesProblem': state.globalTotal <0}"
-      >
-        GLOBAL BALANCE {{formatter.format(state.globalTotal/100)}}
-      </span>
+      Money Actions
       <div class="container">
         <span class="containerIcon credit">+</span>
         <button class="actionButton" style="margin-left: 50px;" @click="deposit()">
@@ -183,6 +176,41 @@
         </div>
       </div>
     </div>
+    <div
+      v-if="state.isAdmin"
+      class="container"
+    >
+      admin section <span style="font-size: .6em;">(you're an admin yay!)</span><br>
+      <div class="container" style="font-size: initial;">
+        <span v-if="state.globalTotal < 0" class="containerIcon debit">-</span>
+        <span v-else class="containerIcon credit">+</span>
+        <div
+          v-if="state.isAdmin"
+          class="adminNotes"
+          :class="{'adminNotesOK':state.globalTotal >=0, 'adminNotesProblem': state.globalTotal < 0}"
+        >
+          <div>
+            GLOBAL BALANCE {{formatter.format(state.globalTotal/100)}}
+          </div>
+        </div><br>
+        <div class="currencyCardsContainer">
+          <div
+            class="currencyCard"
+            v-for="asset in filteredAssets"
+            key="asset.currency"
+          >
+            <div v-html="cardMarkup(asset)"></div>
+          </div><br>
+          <button
+            class="showMoreAssetsButton"
+            v-if="0&&shownAssets<state.globalAssets.length-1"
+            @click="shownAssets+=loadMoreAssetsVal"
+          >
+            load more...
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -200,6 +228,9 @@ export default {
   },
   data(){
     return{
+      graphs: [],
+      shownAssets: 20,
+      loadMoreAssetsVal: 20,
       curTransType: '',
       userNameAvailable: true,
       userNameValidationInProgress: false,
@@ -207,7 +238,105 @@ export default {
     }
   },
   props: [ 'state' ],
+  computed:{
+    filteredAssets(){
+      let t = 0
+      return this.state.globalAssets.filter((v,i)=>{
+        if(t<this.shownAssets &&
+          this.state.featuredCurrencies.filter(q=>q.toUpperCase()==v.currency.toUpperCase()).length){
+          t++
+          return true
+        }
+        return false
+      })
+    }
+  },
   methods:{
+    cardMarkup(asset){
+      this.$nextTick(()=>{
+        let el
+        if(typeof this.graphs[asset.currency] == 'undefined'){
+          el = this.graphs[asset.currency] = {}
+          el.c = document.querySelectorAll('#graph' + asset.id)[0]
+          el.c.width = el.c.clientWidth
+          el.c.height = el.c.clientHeight
+          el.x = el.c.getContext('2d')
+          el.t = 0
+        } else {
+          el = this.graphs[asset.currency]
+        }
+        let x = el.x
+        let t = el.t
+        let c = el.c
+        let S = Math.sin
+        let C = Math.cos
+        //x.fillStyle='#000'
+        //x.fillRect(0,0,c.width,c.height)
+        x.clearRect(0,0,c.width,c.height)
+        
+        if(this.state.history.length){
+          let l
+          let hist=[]
+          let max = -5e8
+          let min = 5e8
+          let avg = 0
+          hist.push(...this.state.history.map(v=>v.filter(q=>q.currency == asset.currency)[0]))
+          hist.map(v=>{
+            avg += v.price_usd / hist.length
+            if(v.price_usd > max) max = v.price_usd
+            if(v.price_usd < min) min = v.price_usd
+          })
+          let range = max - min
+          x.lineJoin=x.lineCap='round'
+          x.lineWidth = 1
+          x.strokeStyle='#48a8'
+          x.beginPath()
+          x.lineTo(0, c.height - 6 - (avg - min) / range * (c.height - 12))
+          x.lineTo(c.width, c.height - 6 - (avg - min) / range * (c.height - 12))
+          x.stroke()
+          hist.map((v,i)=>{
+            if(i){
+              let p1 = hist[i-1].price_usd
+              let X1 = 6 + (c.width-12) / (hist.length-1) * (i-1)
+              let Y1 = c.height - 6 - (p1 - min) / range * (c.height - 12)
+              let p2 = hist[i].price_usd
+              let X2 = 6 + (c.width-12) / (hist.length-1) * i
+              let Y2 = c.height - 6 - (p2 - min) / range * (c.height - 12)
+              for(let j=9;j--;){
+                x.beginPath()
+                let X=X1+(X2-X1)/9*j
+                let Y=Y1+(Y2-Y1)/9*j
+                x.lineTo(X,Y)
+                X=X1+(X2-X1)/9*(j+1)
+                Y=Y1+(Y2-Y1)/9*(j+1)
+                let p = p1 + (p2 - p1) / 9 * j
+                x.lineTo(X,Y)
+                x.strokeStyle = p < avg ? '#ff004403' : '#22ffaa03'
+                x.lineWidth = 16
+                x.stroke()
+                x.strokeStyle = p < avg ? '#fccd' : '#cfcd'
+                x.lineWidth = 2
+                x.stroke()
+              }
+            }
+          })
+         }
+      })
+      return '<span style="display: inline-block;padding-top:4px;color: #ff5;font-size: 1.8em;">' + this.trimmed(asset.currency, 10) +'</span> <span style="font-size: 1em">(' + this.trimmed(asset.name, 20) + ')</span>'+
+      '<br><button class="tinyButtons" title="buy ' + asset.name + '">buy</button>' +
+      '<button class="tinyButtons" title="sell ' + asset.name + '">sell</button>' +
+      '<div class="assetDetailsContainer">'+
+      'value in USD<br>' +
+      '<div class="USDPrice">' +
+      this.formatter.format(Math.round(asset.price_usd*100)/100) +
+      '</div>'+
+      '<div style="float: right;color: #6ae;">(24 hr graph)</div>'+
+      '<canvas id="graph' + asset.id + '" class="graph"></canvas>'
+      '</div>'
+    },
+    trimmed(str, num){
+      return str.split('').filter((v,i)=>i<num).join('')+(str.length>num?'...':'')
+    },
     verbiage(type){
       switch(type){
         case 'send': return 'sent funds'; break
@@ -490,9 +619,18 @@ export default {
          }
        }
        go()
+    },
+    rsz(){
+      Object.entries(this.graphs).map(v=>{
+        let c = v[1].c
+        c.width = c.clientWidth
+        c.height = c.clientHeight
+        this.cardMarkup(this.filteredAssets.filter(q=>q.currency == v[0])[0])
+      })
     }
   },
   mounted(){
+    window.onresize=this.rsz
   }
 }
 </script>
@@ -504,7 +642,8 @@ export default {
     height: 100%;
   }
   .container{
-    background: #5683;
+    background: #1028;
+    border: 1px solid #4682;
     padding: 6px;
     padding-top: 3px;
     padding-bottom: 5px;
@@ -643,9 +782,9 @@ export default {
     color: #ae1;
     background: #223;
     border: none;
-  }
+  }.
   button:disabled{
-    color: #111;
+    color: #666;
   }
   option:disabled{
     color: #666;
@@ -760,7 +899,81 @@ export default {
     background: #400;
   }
   .adminNotes{
+   margin-left: 40px;margin-top:5px;margin-bottom:10px;
     padding: 5px;
     display: inline-block;
+    font-size: 1.2em;
+  }
+  .currencyCard{
+    display: inline-block;
+    vertical-align: top;
+    padding: 0;
+    text-align: left;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin: 5px;
+    border-radius: 3px;
+    background: #0120;
+    font-size: 16px;
+    font-size: .8em;
+    min-width: 200px;
+    width: calc(33.33% - 16px);
+    max-width: 250px;
+  }
+  .currencyCardsContainer{
+    text-align: center;
+    background: #000c;
+    margin: 50px;
+    margin-top: 30px;
+    box-shadow: 0 0 50px 50px #000c;
+  }
+  .showMoreAssetsButton{
+    padding: 0;
+    height: 25px;
+    background: #255;
+    color: #ffc;
+    min-width: 0;
+    width: 120px;
+    font-weight: 400;
+    font-size: 18px;
+  }
+</style>
+<style>
+  .graph{
+    border: 1px solid #ace0;
+    width: calc(100% - 2px);
+    height: 80px;
+    vertical-align: top;
+  }
+  .assetDetailsContainer{
+    width:calc(100% - 6px);
+    background: #0000;
+    color: #aaa;
+    padding: 2px;
+    margin: 0;
+    margin-top: 3px;
+    margin-bottom: 5px;
+  }
+  .USDPrice{
+    font-size: 1.5em;
+    color: #ff6c;
+    display: inline-block;
+  }
+  .tinyButtons{
+    margin: 0;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    width: auto;
+    padding: 2px;
+    padding-top: 0;
+    min-width: auto;
+    font-size: 12px;
+    width: 40px;
+    margin-right: 5px;
+    background-color: #065;
+    color: #fffc;
+    font-weight: 400;
+    text-shadow: 0 0 3px #000;
+    border-radius: 2px;
   }
 </style>
