@@ -430,6 +430,7 @@ export default {
         body: JSON.stringify(sendData),
       })
       .then(json=>json.json()).then(data=>{
+        this.state.getBalance()
       })
     },
     formatDate(date){
