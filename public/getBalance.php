@@ -4,6 +4,8 @@
   $userName = mysqli_real_escape_string($link, $data->{'userName'});
   $passhash = mysqli_real_escape_string($link, $data->{'passhash'});
   $historyPage = mysqli_real_escape_string($link, $data->{'historyPage'});
+  $graphRange = mysqli_real_escape_string($link, $data->{'graphRange'});
+  $graphRangeUnits = mysqli_real_escape_string($link, $data->{'graphRangeUnits'});
   $sql='SELECT balance, id, transactionsPerPage, avatar, isAdmin FROM users WHERE name LIKE "' . $userName . '" AND passhash = "' . $passhash . '"';
   if($res = mysqli_query($link, $sql)){
     $row = mysqli_fetch_assoc($res);
@@ -57,7 +59,7 @@
       $globalAssets[] = $row;
     }
     $history = [];
-    $sql = 'SELECT * FROM history';
+    $sql = "SELECT * FROM history WHERE DATE_SUB(CURDATE(), INTERVAL $graphRangeUnits $graphRange) <= date";
     $res = mysqli_query($link, $sql);
     for($i = 0; $i < mysqli_num_rows($res); ++$i){
       $history[] = json_decode(mysqli_fetch_assoc($res)['currencyData']);

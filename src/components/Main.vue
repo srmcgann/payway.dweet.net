@@ -183,7 +183,23 @@
       <div v-if="state.loggedin">
         coins
       </div>
-        <div style="display: inline-block;margin-left:10px;font-size:.4em;color: #6ae;">(24 hr graphs)</div>
+      <div style="display: inline-block;margin-left:10px;font-size:.4em;color: #6ae;" v-if="0">(24 hr graphs)</div>
+      <label for="graphRangeUnitsSelector" style="display: inline-block;font-size: 12px;line-height: 1em;margin-left: 100px;position:absolute;margin-top: 5px;">
+        <select v-model="state.graphRangeUnits" id="graphRangeUnitsSelector" @input="state.getBalance()">
+          <option v-for="i = 1 in graphRangeUnits()" v-html="i"></option>
+        </select>
+        <div style="display: inline-block; margin-left: 3px;position:absolute;margin-top:-1px;width: 50px;line-height: .8em"></div>
+      </label> 
+      <label for="graphTypeSelector" style="display: inline-block;font-size: 12px;line-height: 1em;margin-left: 150px;position:absolute;margin-top: 5px;">
+        <select v-model="state.graphRange" id="graphTypeSelector" @input="processRangeChange()">
+          <option>MINUTE</option>
+          <option>HOUR</option>
+          <option>DAY</option>
+          <option>MONTH</option>
+          <option>YEAR</option>
+        </select>
+        <div style="display: inline-block; margin-left: 3px;position:absolute;margin-top:-1px;width: 50px;line-height: .8em">graph<br>range</div>
+      </label>        
       <div class="container" style="border: none;font-size: initial;">
         <div class="currencyCardsContainer">
           <div
@@ -304,6 +320,19 @@ export default {
     }
   },
   methods:{
+    processRangeChange(){
+      this.state.graphRangeUnits = 1
+      this.$nextTick(()=>{this.state.getBalance()})
+    },
+    graphRangeUnits(){
+      switch(this.state.graphRange){
+        case 'MINUTE': return 60;break
+        case 'HOUR': return 24;break
+        case 'DAY': return 365;break
+        case 'MONTH': return 12;break
+        case 'YEAR': return 20;break
+      }
+    },
     update(currency, featured){
       let sendData = {
         userName: this.state.userName,

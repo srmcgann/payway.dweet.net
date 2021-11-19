@@ -39,7 +39,7 @@
     $sql = 'INSERT INTO history (currencyData) VALUES ("' . mysqli_real_escape_string($link, json_encode($history)) . '")';
     mysqli_query($link, $sql);
   }
-  $sql = 'DELETE FROM history WHERE date < (NOW() - INTERVAL 1 DAY)';
-  mysqli_query($link, $sql);
+  //$sql = 'DELETE FROM history WHERE date < (NOW() - INTERVAL 1 DAY)';
+  //mysqli_query($link, $sql);
   echo 'finished inserting / updating ' . sizeof($assets) . " asset names.\n";
 ?>

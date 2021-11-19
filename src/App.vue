@@ -27,6 +27,8 @@ export default {
         userAgent: null,
         transactionAmount: '',
         withdrawalAmount: '',
+        graphRange: 'DAY',
+        graphRangeUnits: '1',
         sendAmount: '',
         pages: 0,
         globalTotal: 0,
@@ -141,7 +143,13 @@ export default {
       })
     },
     getBalance(){
-      let sendData = {userName: this.state.userName, passhash: this.state.passhash, historyPage: this.state.historyPage}
+      let sendData = {
+        userName: this.state.userName,
+        passhash: this.state.passhash,
+        historyPage: this.state.historyPage,
+        graphRange: this.state.graphRange,
+        graphRangeUnits: this.state.graphRangeUnits
+      }
       fetch(this.state.baseURL + '/getBalance.php',{
         method: 'POST',
         headers: {

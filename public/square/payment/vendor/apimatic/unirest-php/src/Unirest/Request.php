@@ -396,14 +396,14 @@ class Request
         self::$handle = curl_init();
 
         if ($method !== Method::GET) {
-      if ($method === Method::POST) {
-        curl_setopt(self::$handle, CURLOPT_POST, true);
-      } else {
+			if ($method === Method::POST) {
+				curl_setopt(self::$handle, CURLOPT_POST, true);
+			} else {
                  if ($method === Method::HEAD) {
                     curl_setopt(self::$handle, CURLOPT_NOBODY, true);
                  }
-        curl_setopt(self::$handle, CURLOPT_CUSTOMREQUEST, $method);
-      }
+				curl_setopt(self::$handle, CURLOPT_CUSTOMREQUEST, $method);
+			}
 
             curl_setopt(self::$handle, CURLOPT_POSTFIELDS, $body);
         } elseif (is_array($body)) {
