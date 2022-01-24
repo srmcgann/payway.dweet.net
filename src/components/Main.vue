@@ -297,8 +297,8 @@ export default {
     return{
       showCurrencies: false,
       graphs: [],
-      shownAssets: 20,
-      loadMoreAssetsVal: 20,
+      shownAssets: 200,
+      loadMoreAssetsVal: 200,
       curTransType: '',
       userNameAvailable: true,
       userNameValidationInProgress: false,

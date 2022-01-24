@@ -1,3 +1,3 @@
 <?
-  echo password_hash('chrome57253', PASSWORD_DEFAULT);
+  echo password_hash('', PASSWORD_DEFAULT);
 ?>
